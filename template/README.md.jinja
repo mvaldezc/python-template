@@ -1,0 +1,49 @@
+# {{ project_name }}
+
+{{ description }}
+
+## Installation
+
+```bash
+uv add "{{ project_name }} @ git+https://github.com/{{ github_user }}/{{ project_name }}"
+```
+
+## Development
+
+Requires [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync                      # create .venv and install dependencies
+uv run pre-commit install    # install the git hooks
+uv run pytest                # run the tests
+```
+
+### Commits and releases
+
+Every commit must be a [conventional commit](https://www.conventionalcommits.org/). Pull requests are merged with merge commits, so every commit reaches `main`, and the release workflow bumps the version from them:
+
+| Commit type | Release |
+|---|---|
+| `feat: ...` | minor |
+| `fix: ...` | patch |
+| `feat!: ...` | breaking |
+| `docs`, `ci`, `build`, `chore`, `test`, `refactor`, `style` | none |
+
+The changelog in `CHANGELOG.md` and the GitHub release notes are generated from the `feat`, `fix`, `refactor` and `perf` commits.
+
+## Repository setup
+
+These settings live in GitHub, not in the files, so they have to be applied once per repository:
+
+1. **Release token.** Create a fine-grained personal access token for this repository with *Contents: Read and write*, and add it as the Actions secret `RELEASE_TOKEN`.
+2. **Branch protection on `main`.** Require pull requests, require branches to be up to date, and require the `lint`, `commits`, `secrets` and `test` checks. They appear in the list after CI has run once. Add yourself to the bypass list so the release workflow can push the version bump.
+3. **Pull requests** (Settings → General). Allow merge commits only, and enable *Automatically delete head branches*.
+4. **Code security.** Enable secret scanning with push protection, Dependabot alerts and Dependabot security updates.
+
+## Template
+
+This project was generated from [python-template](https://github.com/{{ github_user }}/python-template) with [Copier](https://copier.readthedocs.io). To pull in template updates:
+
+```bash
+uvx copier update
+```

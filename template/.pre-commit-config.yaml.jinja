@@ -1,0 +1,52 @@
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  # Pre-commit hooks for general purpose checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  # Prevent secrets from being committed to the repo.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+{%- if use_notebooks %}
+
+  # Strip notebook outputs so diffs stay readable and plots don't bloat the repo
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout
+{%- endif %}
+
+  # Run tools from the project venv so versions match uv.lock
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --no-sync ruff check --fix
+        language: system
+        types_or: [python, pyi{% if use_notebooks %}, jupyter{% endif %}]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --no-sync ruff format
+        language: system
+        types_or: [python, pyi{% if use_notebooks %}, jupyter{% endif %}]
+      - id: uv-lock
+        name: uv lock
+        entry: uv lock --check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+      - id: commitizen
+        name: commitizen check
+        entry: uv run --no-sync cz check --commit-msg-file
+        language: system
+        stages: [commit-msg]

@@ -1,0 +1,109 @@
+{%- set keyword_list = keywords.split(',') | map('trim') | reject('equalto', '') | list -%}
+# ============================================================
+# Project metadata
+# ============================================================
+
+[project]
+name = "{{ project_name }}"
+version = "0.0.0"
+requires-python = ">={{ python_version }}"
+description = {{ description | tojson }}
+authors = [
+    { name = {{ author_name | tojson }}, email = {{ author_email | tojson }} },
+]
+
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = {{ keyword_list | tojson }}
+
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/{{ github_user }}/{{ project_name }}"
+Issues = "https://github.com/{{ github_user }}/{{ project_name }}/issues"
+Documentation = "https://github.com/{{ github_user }}/{{ project_name }}#readme"
+Changelog = "https://github.com/{{ github_user }}/{{ project_name }}/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.19.3",
+    "hypothesis>=6.170.13",
+{%- if use_notebooks %}
+    "ipykernel>=7.4.0",
+{%- endif %}
+    "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.17.3",
+]
+
+# ============================================================
+# Build
+# ============================================================
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+# ============================================================
+# Versioning and release (commitizen)
+# ============================================================
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+change_type_map = { feat = "Features", fix = "Bug fixes", refactor = "Refactoring", perf = "Performance" }
+
+# ============================================================
+# Linting and formatting (ruff)
+# ============================================================
+
+[tool.ruff]
+src = ["src", "tests"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "S", "I", "C90", "UP", "D", "PL"]
+ignore = ["E501", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004"]
+{%- if use_notebooks %}
+"notebooks/**" = ["D"]
+{%- endif %}
+"__init__.py" = ["D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pylint]
+max-args = 7
+max-statements = 60
+
+# ============================================================
+# Testing (pytest + coverage)
+# ============================================================
+
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--cov"]
+
+[tool.coverage.run]
+source = ["{{ package_name }}"]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"

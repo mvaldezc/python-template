@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    # Skip the commit pushed by this workflow itself
+    if: ${{ !startsWith(github.event.head_commit.message, 'bump:') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Bump version
+        id: bump
+        run: |
+          before="$(uv version --short)"
+          # Exit code 21: no commits that warrant a bump (e.g. only docs/chore)
+          uv run cz --no-raise 21 bump --yes --changelog-to-stdout --git-output-to-stderr > notes.md
+          after="$(uv version --short)"
+          if [ "$before" = "$after" ]; then
+            echo "No version bump needed"
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "version=$after" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Push bump commit and tag
+        if: steps.bump.outputs.released == 'true'
+        run: git push origin HEAD:main "${{ steps.bump.outputs.version }}"
+      - name: Build
+        if: steps.bump.outputs.released == 'true'
+        run: uv build
+      - name: Create GitHub release
+        if: steps.bump.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: gh release create "$VERSION" dist/* --title "$VERSION" --notes-file notes.md

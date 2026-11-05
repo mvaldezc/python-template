@@ -1,0 +1,69 @@
+_min_copier_version: "9.4"
+_subdirectory: template
+_exclude:
+  - "**/.DS_Store"
+  - "**/__pycache__"
+  - "*.py[co]"
+  - "~*"
+
+project_name:
+  type: str
+  help: Project name (distribution name on PyPI, lowercase with hyphens)
+  placeholder: my-project
+  validator: >-
+    {% if not (project_name | regex_search('^[a-z][a-z0-9-]*[a-z0-9]$')) %}
+    Use lowercase letters, digits and hyphens, starting with a letter.
+    {% endif %}
+
+package_name:
+  type: str
+  help: Python package name (the name you import)
+  default: "{{ project_name | replace('-', '_') }}"
+  validator: >-
+    {% if not (package_name | regex_search('^[a-z][a-z0-9_]*$')) %}
+    Use lowercase letters, digits and underscores, starting with a letter.
+    {% endif %}
+
+description:
+  type: str
+  help: One-line description of the project
+  default: ""
+
+keywords:
+  type: str
+  help: Comma-separated keywords for PyPI (optional)
+  default: ""
+
+author_name:
+  type: str
+  help: Author name
+  default: Marco Valdez
+
+author_email:
+  type: str
+  help: Author email
+  default: mvaldezc@umich.edu
+
+github_user:
+  type: str
+  help: GitHub user or organization that will own the repository
+  default: mvaldezc
+
+python_version:
+  type: str
+  help: Minimum Python version
+  default: "3.15"
+  validator: >-
+    {% if not (python_version | regex_search('^3\.[0-9]+$')) %}
+    Use the form 3.X, for example 3.13.
+    {% endif %}
+
+use_notebooks:
+  type: bool
+  help: Add a notebooks/ folder with ipykernel and output stripping?
+  default: true
+
+hardware_project:
+  type: bool
+  help: Does the project run on physical hardware (adds hardware testing to the PR template)?
+  default: false

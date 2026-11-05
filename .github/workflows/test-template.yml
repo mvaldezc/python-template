@@ -1,0 +1,38 @@
+name: Test template
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        use_notebooks: [true, false]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+      - name: Generate project
+        run: |
+          uvx copier copy --defaults --vcs-ref HEAD \
+            --data project_name=sample-project \
+            --data description="Sample project" \
+            --data use_notebooks=${{ matrix.use_notebooks }} \
+            . "$RUNNER_TEMP/sample-project"
+      - name: Check generated project
+        working-directory: ${{ runner.temp }}/sample-project
+        run: |
+          git init -q -b main
+          uv sync
+          git add -A
+          uv run pre-commit run --all-files
+          uv run pytest
+          uv build

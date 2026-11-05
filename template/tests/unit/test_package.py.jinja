@@ -1,0 +1,10 @@
+"""Unit tests for the {{ package_name }} package metadata."""
+
+from importlib.metadata import version
+
+import {{ package_name }}
+
+
+def test_version_matches_installed_metadata():
+    """__version__ matches the installed package metadata."""
+    assert {{ package_name }}.__version__ == version("{{ project_name }}")
